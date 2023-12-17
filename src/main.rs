@@ -1,14 +1,23 @@
 mod image_scanner;
 
-use image::GenericImageView;
+use image::io::Reader as ImageReader;
+use image::Rgba;
 use image_scanner::ImageScanner;
 
+use crate::image_scanner::Config;
+
 fn main() {
-    let scanner = ImageScanner {};
+    let config = Config::new(Rgba([0, 0, 0, 0]), 1);
 
-    let img = scanner.load_image("assets/images/crewmate.png").unwrap();
+    let scanner = ImageScanner::new(config);
 
-    let (width, height) = img.dimensions();
+    let image_path = "assets/images/crewmate.png";
+    let img = ImageReader::open(image_path)
+        .expect("Failed to open image")
+        .decode()
+        .expect("Failed to decode image");
 
-    println!("Loaded image with width: {width}, height: {height}");
+    let pattern = scanner.create_pattern_from_image(img);
+
+    println!("{:?}", pattern);
 }
