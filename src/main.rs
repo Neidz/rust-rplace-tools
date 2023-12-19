@@ -18,9 +18,9 @@ fn main() {
     let img_path = "assets/images/crewmate_with_borders.png";
     let img = ImageReader::open(img_path).unwrap().decode().unwrap();
 
-    let search_pattern = scanner.create_pattern_from_image(search_img);
+    let search_pattern = scanner.create_pattern(search_img);
 
     let found_patterns = scanner.scan_image_for_patterns(&search_pattern, &img);
 
-    println!("{:?}", found_patterns);
+    println!("{:?}", found_patterns.len());
 }

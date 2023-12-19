@@ -1,6 +1,6 @@
 use image::{DynamicImage, GenericImageView, Rgba};
 
-use super::color_utils::ColorUtils;
+use super::{color_utils::ColorUtils, coordinate::Coordinate};
 
 #[derive(Debug)]
 pub struct Pattern {
@@ -27,15 +27,15 @@ impl Pattern {
 
         let mut coordinates: Vec<Coordinate> = Vec::new();
 
-        for y in 0..img_height {
-            for x in 0..img_width {
-                let pixel_color = image.get_pixel(x, y);
+        for y in 0..img_height as i32 {
+            for x in 0..img_width as i32 {
+                let pixel_color = image.get_pixel(x as u32, y as u32);
 
                 let is_equal =
                     ColorUtils::equal_with_tolerance(search_color, pixel_color, tolerance);
 
                 if is_equal {
-                    coordinates.push(Coordinate { x, y })
+                    coordinates.push(Coordinate::new(x, y))
                 }
             }
         }
@@ -56,18 +56,12 @@ impl Pattern {
             }
         }
 
-        (highest_x + 1, highest_y + 1)
+        (highest_x as u32 + 1, highest_y as u32 + 1)
     }
 
     pub fn contains_coordinate(&self, coordinate: &Coordinate) -> bool {
         self.coordinates.contains(coordinate)
     }
-}
-
-#[derive(Debug, PartialEq)]
-pub struct Coordinate {
-    pub x: u32,
-    pub y: u32,
 }
 
 #[cfg(test)]

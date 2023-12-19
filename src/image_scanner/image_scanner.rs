@@ -11,7 +11,7 @@ impl ImageScanner {
         ImageScanner { config }
     }
 
-    pub fn create_pattern_from_image(&self, image: DynamicImage) -> Pattern {
+    pub fn create_pattern(&self, image: DynamicImage) -> Pattern {
         Pattern::from_image(
             image,
             self.config.searched_color,
@@ -31,7 +31,10 @@ impl ImageScanner {
         )
     }
 
-    pub fn scan_images_to_patterns(&self, images: &Vec<DynamicImage>) -> Vec<Vec<Pattern>> {
+    pub fn scan_multiple_images_for_patterns(
+        &self,
+        images: &Vec<DynamicImage>,
+    ) -> Vec<Vec<Pattern>> {
         todo!()
     }
 }
