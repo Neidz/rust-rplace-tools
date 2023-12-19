@@ -14,18 +14,25 @@ impl Pattern {
         }
     }
 
-    pub fn from_image(image: DynamicImage, searched_color: &Rgba<u8>, tolerance: &u8) -> Self {
-        let img_width = image.width();
-        let img_height = image.height();
+    pub fn new_from_coordinates(coordinates: Vec<Coordinate>) -> Self {
+        Pattern { coordinates }
+    }
+
+    pub fn get_coordinates(&self) -> &Vec<Coordinate> {
+        &self.coordinates
+    }
+
+    pub fn from_image(image: DynamicImage, search_color: Rgba<u8>, tolerance: u8) -> Self {
+        let (img_width, img_height) = image.dimensions();
 
         let mut coordinates: Vec<Coordinate> = Vec::new();
 
         for y in 0..img_height {
             for x in 0..img_width {
-                let pixel_color = &image.get_pixel(x, y);
+                let pixel_color = image.get_pixel(x, y);
 
                 let is_equal =
-                    ColorUtils::equal_with_tolerance(&searched_color, pixel_color, tolerance);
+                    ColorUtils::equal_with_tolerance(search_color, pixel_color, tolerance);
 
                 if is_equal {
                     coordinates.push(Coordinate { x, y })
@@ -35,12 +42,32 @@ impl Pattern {
 
         Pattern { coordinates }
     }
+
+    pub fn get_window_bounds(&self) -> (u32, u32) {
+        let mut highest_x = 0;
+        let mut highest_y = 0;
+
+        for i in &self.coordinates {
+            if i.x > highest_x {
+                highest_x = i.x;
+            }
+            if i.y > highest_y {
+                highest_y = i.y;
+            }
+        }
+
+        (highest_x + 1, highest_y + 1)
+    }
+
+    pub fn contains_coordinate(&self, coordinate: &Coordinate) -> bool {
+        self.coordinates.contains(coordinate)
+    }
 }
 
 #[derive(Debug, PartialEq)]
 pub struct Coordinate {
-    x: u32,
-    y: u32,
+    pub x: u32,
+    pub y: u32,
 }
 
 #[cfg(test)]
@@ -72,8 +99,44 @@ mod tests {
             Coordinate { x: 3, y: 3 },
         ];
 
-        let pattern = Pattern::from_image(image, &Rgba([0, 0, 0, 0]), &0);
+        let pattern = Pattern::from_image(image, Rgba([0, 0, 0, 0]), 0);
 
         assert_eq!(pattern.coordinates, expected_coordinates);
+    }
+
+    #[test]
+    fn test_get_coordinates_bounds() {
+        let pattern = Pattern {
+            coordinates: vec![
+                Coordinate { x: 2, y: 5 },
+                Coordinate { x: 4, y: 3 },
+                Coordinate { x: 1, y: 6 },
+            ],
+        };
+
+        let expected_bounds = (5, 7);
+
+        let actual_bounds = pattern.get_window_bounds();
+
+        assert_eq!(actual_bounds, expected_bounds);
+    }
+
+    #[test]
+    fn test_contains_coordinate() {
+        let pattern = Pattern {
+            coordinates: vec![
+                Coordinate { x: 2, y: 5 },
+                Coordinate { x: 4, y: 3 },
+                Coordinate { x: 1, y: 6 },
+            ],
+        };
+
+        assert!(pattern.contains_coordinate(&Coordinate { x: 2, y: 5 }));
+        assert!(pattern.contains_coordinate(&Coordinate { x: 4, y: 3 }));
+        assert!(pattern.contains_coordinate(&Coordinate { x: 1, y: 6 }));
+
+        assert!(!pattern.contains_coordinate(&Coordinate { x: 0, y: 0 }));
+        assert!(!pattern.contains_coordinate(&Coordinate { x: 3, y: 5 }));
+        assert!(!pattern.contains_coordinate(&Coordinate { x: 1, y: 1 }));
     }
 }

@@ -1,8 +1,6 @@
-use std::path::Path;
-
 use image::DynamicImage;
 
-use super::{pattern::Pattern, Config};
+use super::{pattern::Pattern, scan_image::scan_image, Config};
 
 pub struct ImageScanner {
     config: Config,
@@ -14,14 +12,26 @@ impl ImageScanner {
     }
 
     pub fn create_pattern_from_image(&self, image: DynamicImage) -> Pattern {
-        Pattern::from_image(image, &self.config.searched_color, &self.config.tolerance)
+        Pattern::from_image(
+            image,
+            self.config.searched_color,
+            self.config.pattern_extracting_tolerance,
+        )
     }
 
-    pub fn scan_image_for_patterns(&self, image: DynamicImage) -> Vec<Pattern> {
-        todo!()
+    pub fn scan_image_for_patterns(
+        &self,
+        search_pattern: &Pattern,
+        image: &DynamicImage,
+    ) -> Vec<Pattern> {
+        scan_image(
+            image,
+            search_pattern,
+            self.config.pattern_searching_tolerance,
+        )
     }
 
-    pub fn scan_images_to_patterns(&self, images: Vec<DynamicImage>) -> Vec<Vec<Pattern>> {
+    pub fn scan_images_to_patterns(&self, images: &Vec<DynamicImage>) -> Vec<Vec<Pattern>> {
         todo!()
     }
 }
