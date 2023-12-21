@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use image::{DynamicImage, GenericImageView};
 use rayon::prelude::*;
 
@@ -11,34 +13,26 @@ pub fn scan_image(
     pattern_search_tolerance: u8,
 ) -> Vec<Pattern> {
     let (img_width, img_height) = image.dimensions();
-    let pattern_coordinates = search_pattern.get_coordinates();
     let (window_width, window_height) = search_pattern.get_window_size();
+
+    let adjacent_pixel_coordinates =
+        Arc::new(search_pattern.generate_coordinates_of_adjacent_pixels());
 
     let found_patterns: Vec<Pattern> = (0..(img_height - window_height))
         .into_par_iter()
         .flat_map(|offset_y| {
+            let adjacent_pixel_coordinates = Arc::clone(&adjacent_pixel_coordinates);
             (0..(img_width - window_width))
                 .into_par_iter()
                 .filter_map(move |offset_x| {
-                    if is_pattern_in_window(
+                    pattern_in_window(
                         image,
                         offset_x,
                         offset_y,
                         search_pattern,
                         pattern_search_tolerance,
-                    ) {
-                        let coordinates_of_found_pattern = pattern_coordinates
-                            .iter()
-                            .map(|coord| Coordinate {
-                                x: coord.x + offset_x as i32,
-                                y: coord.y + offset_y as i32,
-                            })
-                            .collect();
-
-                        Some(Pattern::new_from_coordinates(coordinates_of_found_pattern))
-                    } else {
-                        None
-                    }
+                        &adjacent_pixel_coordinates,
+                    )
                 })
         })
         .collect();
@@ -46,13 +40,14 @@ pub fn scan_image(
     found_patterns
 }
 
-fn is_pattern_in_window(
+fn pattern_in_window(
     image: &DynamicImage,
     offset_x: u32,
     offset_y: u32,
     search_pattern: &Pattern,
     pattern_search_tolerance: u8,
-) -> bool {
+    adjacent_pixel_coordinates: &Arc<Vec<Coordinate>>,
+) -> Option<Pattern> {
     let (window_width, window_height) = search_pattern.get_window_size();
     let window = image.view(offset_x, offset_y, window_width, window_height);
     let pattern_coordinates = search_pattern.get_coordinates();
@@ -70,11 +65,9 @@ fn is_pattern_in_window(
             pixel_color,
             pattern_search_tolerance,
         ) {
-            return false;
+            return None;
         }
     }
-
-    let adjacent_pixel_coordinates = search_pattern.generate_coordinates_of_adjacent_pixels();
 
     let window_with_border =
         ImageUtils::create_view_with_border(image, offset_x, offset_y, window_width, window_height);
@@ -86,7 +79,7 @@ fn is_pattern_in_window(
     let expanded_x_by = if offset_x == 0 { 0 } else { 1 };
     let expanded_y_by = if offset_y == 0 { 0 } else { 1 };
 
-    for coordinate in adjacent_pixel_coordinates {
+    for coordinate in adjacent_pixel_coordinates.iter().cloned() {
         let adjusted_x = coordinate.x + expanded_x_by;
         let adjusted_y = coordinate.y + expanded_y_by;
 
@@ -103,10 +96,18 @@ fn is_pattern_in_window(
                 adjacent_pixel_color,
                 pattern_search_tolerance,
             ) {
-                return false;
+                return None;
             }
         }
     }
 
-    return true;
+    let coordinates_of_found_pattern = pattern_coordinates
+        .iter()
+        .map(|coord| Coordinate {
+            x: coord.x + offset_x as i32,
+            y: coord.y + offset_y as i32,
+        })
+        .collect();
+
+    Some(Pattern::new_from_coordinates(coordinates_of_found_pattern))
 }
