@@ -22,6 +22,7 @@ pub fn scan_image(
         .into_par_iter()
         .flat_map(|offset_y| {
             let adjacent_pixel_coordinates = Arc::clone(&adjacent_pixel_coordinates);
+
             (0..(img_width - window_width))
                 .into_par_iter()
                 .filter_map(move |offset_x| {
@@ -79,7 +80,7 @@ fn pattern_in_window(
     let expanded_x_by = if offset_x == 0 { 0 } else { 1 };
     let expanded_y_by = if offset_y == 0 { 0 } else { 1 };
 
-    for coordinate in adjacent_pixel_coordinates.iter().cloned() {
+    for coordinate in adjacent_pixel_coordinates.iter() {
         let adjusted_x = coordinate.x + expanded_x_by;
         let adjusted_y = coordinate.y + expanded_y_by;
 
