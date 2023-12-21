@@ -112,3 +112,79 @@ fn pattern_in_window(
 
     Some(Pattern::new_from_coordinates(coordinates_of_found_pattern))
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::image_scanner::pattern::Pattern;
+
+    use super::scan_image;
+    use image::io::Reader as ImageReader;
+    use image::Rgba;
+
+    fn load_image(image_path: &str) -> image::DynamicImage {
+        ImageReader::open(image_path)
+            .expect("Failed to open image")
+            .decode()
+            .expect("Failed to decode image")
+    }
+
+    const SEARCHED_COLOR: Rgba<u8> = Rgba([0, 0, 0, 0]);
+    const PATTERN_EXTRACTING_TOLERANCE: u8 = 1;
+    const PATTERN_SEARCHING_TOLERANCE: u8 = 1;
+
+    #[test]
+    fn test_scan_image_simple() {
+        let pattern_image = load_image("assets/images/crewmate.png");
+        let scanned_image = load_image("assets/images/crewmate_with_borders.png");
+
+        let search_pattern =
+            Pattern::from_image(pattern_image, SEARCHED_COLOR, PATTERN_EXTRACTING_TOLERANCE);
+
+        let found_patterns =
+            scan_image(&scanned_image, &search_pattern, PATTERN_SEARCHING_TOLERANCE);
+
+        assert_eq!(found_patterns.len(), 1)
+    }
+
+    #[test]
+    fn test_scan_image_different_colors() {
+        let pattern_image = load_image("assets/images/crewmate.png");
+        let scanned_image = load_image("assets/images/8_crewmates.png");
+
+        let search_pattern =
+            Pattern::from_image(pattern_image, SEARCHED_COLOR, PATTERN_EXTRACTING_TOLERANCE);
+
+        let found_patterns =
+            scan_image(&scanned_image, &search_pattern, PATTERN_SEARCHING_TOLERANCE);
+
+        assert_eq!(found_patterns.len(), 8)
+    }
+
+    #[test]
+    fn test_scan_image_adjacent() {
+        let pattern_image = load_image("assets/images/crewmate.png");
+        let scanned_image = load_image("assets/images/4_crewmates_adjacent_test.png");
+
+        let search_pattern =
+            Pattern::from_image(pattern_image, SEARCHED_COLOR, PATTERN_EXTRACTING_TOLERANCE);
+
+        let found_patterns =
+            scan_image(&scanned_image, &search_pattern, PATTERN_SEARCHING_TOLERANCE);
+
+        assert_eq!(found_patterns.len(), 4)
+    }
+
+    #[test]
+    fn test_scan_image_different_adjacent_2() {
+        let pattern_image = load_image("assets/images/crewmate.png");
+        let scanned_image = load_image("assets/images/4_crewmates_adjacent_test_2.png");
+
+        let search_pattern =
+            Pattern::from_image(pattern_image, SEARCHED_COLOR, PATTERN_EXTRACTING_TOLERANCE);
+
+        let found_patterns =
+            scan_image(&scanned_image, &search_pattern, PATTERN_SEARCHING_TOLERANCE);
+
+        assert_eq!(found_patterns.len(), 4)
+    }
+}

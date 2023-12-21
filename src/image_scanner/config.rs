@@ -23,7 +23,7 @@ impl Config {
         Config {
             searched_color: Rgba([0, 0, 0, 0]),
             pattern_extracting_tolerance: 1,
-            pattern_searching_tolerance: 0,
+            pattern_searching_tolerance: 1,
         }
     }
 }
