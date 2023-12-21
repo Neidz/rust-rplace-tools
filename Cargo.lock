@@ -306,6 +306,7 @@ name = "rusty-rplace-tools"
 version = "0.1.0"
 dependencies = [
  "image",
+ "rayon",
 ]
 
 [[package]]

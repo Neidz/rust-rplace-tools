@@ -1,4 +1,5 @@
 use image::{DynamicImage, GenericImageView};
+use rayon::prelude::*;
 
 use super::{
     color_utils::ColorUtils, coordinate::Coordinate, image_utils::ImageUtils, pattern::Pattern,
@@ -11,32 +12,36 @@ pub fn scan_image(
 ) -> Vec<Pattern> {
     let (img_width, img_height) = image.dimensions();
     let pattern_coordinates = search_pattern.get_coordinates();
-
-    let mut found_patterns: Vec<Pattern> = Vec::new();
-
     let (window_width, window_height) = search_pattern.get_window_size();
 
-    for offset_y in 0..img_height - window_height {
-        for offset_x in 0..img_width - window_width {
-            if is_pattern_in_window(
-                image,
-                offset_x,
-                offset_y,
-                search_pattern,
-                pattern_search_tolerance,
-            ) {
-                let coordinates_of_found_pattern = pattern_coordinates
-                    .iter()
-                    .map(|coord| Coordinate {
-                        x: coord.x + offset_x as i32,
-                        y: coord.y + offset_y as i32,
-                    })
-                    .collect();
+    let found_patterns: Vec<Pattern> = (0..(img_height - window_height))
+        .into_par_iter()
+        .flat_map(|offset_y| {
+            (0..(img_width - window_width))
+                .into_par_iter()
+                .filter_map(move |offset_x| {
+                    if is_pattern_in_window(
+                        image,
+                        offset_x,
+                        offset_y,
+                        search_pattern,
+                        pattern_search_tolerance,
+                    ) {
+                        let coordinates_of_found_pattern = pattern_coordinates
+                            .iter()
+                            .map(|coord| Coordinate {
+                                x: coord.x + offset_x as i32,
+                                y: coord.y + offset_y as i32,
+                            })
+                            .collect();
 
-                found_patterns.push(Pattern::new_from_coordinates(coordinates_of_found_pattern));
-            }
-        }
-    }
+                        Some(Pattern::new_from_coordinates(coordinates_of_found_pattern))
+                    } else {
+                        None
+                    }
+                })
+        })
+        .collect();
 
     found_patterns
 }
