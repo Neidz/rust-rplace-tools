@@ -1,3 +1,4 @@
+mod feed_parser;
 mod image_io;
 mod image_scanner;
 
